@@ -1,0 +1,7 @@
+[package]
+
+name = "selex"
+version = "0.0.1"
+authors = ["Nathan Boley <npboley@gmail.com>"]
+
+[dependencies] rand = "*"
