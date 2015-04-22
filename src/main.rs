@@ -184,9 +184,9 @@ fn load_initial_score_matrix(motif_len: i32) -> Vec<Score> {
 }
 
 fn estimate_normalization_constants(
-    obs_rds: Vec<SelexRead>, 
-    score_mat: Vec<Score>, 
-    unbnd_concs: Vec<f32>
+    obs_rds: &Vec<SelexRead>, 
+    score_mat: &Vec<Score>, 
+    unbnd_concs: &Vec<f32>
         ) -> f32 {
     // Find the number of reads in each round
     let mut rnd_cnts = vec![0; unbnd_concs.len()];
@@ -224,9 +224,9 @@ fn estimate_normalization_constants(
 }
 
 fn calc_lhd(
-    obs_rds: Vec<SelexRead>, 
-    score_mat: Vec<Score>, 
-    unbnd_concs: Vec<f32>
+    obs_rds: &Vec<SelexRead>, 
+    score_mat: &Vec<Score>, 
+    unbnd_concs: &Vec<f32>
         ) -> f32
 {
     let mut lhd_num = 0.0; 
@@ -238,7 +238,7 @@ fn calc_lhd(
     }
 
     let norm_constant = estimate_normalization_constants(
-        obs_rds, score_mat, unbnd_concs);
+        &obs_rds, &score_mat, &unbnd_concs);
 
     lhd_num - norm_constant
 }
@@ -252,7 +252,8 @@ fn main() {
     let unbnd_concentrations = vec![1.0; env::args().len()];
 
     for _ in 1..10 {
-        let lhd = calc_lhd(observed_reads, score_matrix, unbnd_concentrations);
+        let lhd = calc_lhd(
+            &observed_reads, &score_matrix, &unbnd_concentrations);
         print!("Lhd: {}\n", lhd);
     }
 }
