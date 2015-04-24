@@ -14,7 +14,7 @@ use rand::distributions::{IndependentSample, Range};
 
 static R: f32 = 0.8314472;
 static T: f32 = 300.0;
-static NUM_SIMS_PER_RND: i32 = 100000;
+static NUM_SIMS_PER_RND: i32 = 10000;
 
 struct Score {
     a: f32,
@@ -97,9 +97,12 @@ fn load_sequences_in_round(fname: &str, round: i32) -> Vec<SelexRead> {
 }
 
 
-fn calc_gibbs_free_energy(seq: &[Base], base_scores: &Vec<Score>) -> f32 {
+fn calc_fwd_and_revcmp_gibbs_free_energy(
+        seq: &[Base], base_scores: &Vec<Score>) -> (f32, f32) {
     assert!(seq.len() == base_scores.len());
     let mut score: f32 = 0.0;
+    let mut rc_score: f32 = 0.0;
+
     for pos in 0..base_scores.len() {
         score += match seq[pos] {
             Base::A => base_scores[pos].a,
@@ -108,15 +111,22 @@ fn calc_gibbs_free_energy(seq: &[Base], base_scores: &Vec<Score>) -> f32 {
             Base::T => base_scores[pos].t,
             Base::N => unreachable!(),
         };
+
+        rc_score += match seq[base_scores.len() - pos - 1] {
+            Base::A => base_scores[pos].t,
+            Base::C => base_scores[pos].g,
+            Base::G => base_scores[pos].c,
+            Base::T => base_scores[pos].a,
+            Base::N => unreachable!(),
+        };
+
     }    
-    score 
+    (score , rc_score)
 }
 
-fn calc_occupancy(seq: &[Base], 
-                  base_scores: &Vec<Score>, 
+fn calc_occupancy(gibbs_free_energy: f32, 
                   unbnd_conc: f32) -> f32 { 
-    let gfe = calc_gibbs_free_energy(seq, base_scores);
-    let numerator = unbnd_conc*(-gfe/(R*T)).exp();
+    let numerator = unbnd_conc*(-gibbs_free_energy/(R*T)).exp();
     numerator/(1.0+numerator)
 }
 
@@ -124,13 +134,20 @@ fn calc_occupancy(seq: &[Base],
 fn calc_max_occupancy(seq: &[Base], 
                       base_scores: &Vec<Score>,
                       unbnd_conc: f32) -> f32 {
-    let bs_iter = seq.windows(base_scores.len());
     let mut max_occupancy = 0.0;
     
-    for substr in bs_iter {
-        let occupancy = calc_occupancy(substr, base_scores, unbnd_conc);
-        if occupancy > max_occupancy {
-            max_occupancy = occupancy;
+    for sub_seq in seq.windows(base_scores.len()) {
+        let (gfe, rc_gfe) = calc_fwd_and_revcmp_gibbs_free_energy(
+            sub_seq, base_scores);
+        let fwd_occupancy = calc_occupancy(gfe, unbnd_conc);
+        let rc_occupancy = calc_occupancy(rc_gfe, unbnd_conc);
+
+        if fwd_occupancy > max_occupancy {
+            max_occupancy = fwd_occupancy;
+        };
+
+        if rc_occupancy > max_occupancy {
+            max_occupancy = rc_occupancy;
         };
     }
     
@@ -153,7 +170,6 @@ fn simulate_read(len: usize) -> Vec<Base> {
         seq.push(base);
     }
     seq
-    //println!("{:?}", seq);
 }
 
 fn load_all_reads() -> Vec<SelexRead> {
