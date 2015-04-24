@@ -14,7 +14,7 @@ use rand::distributions::{IndependentSample, Range};
 
 static R: f32 = 0.8314472;
 static T: f32 = 300.0;
-static NUM_SIMS_PER_RND: i32 = 10000;
+static NUM_SIMS_PER_RND: i32 = 100000;
 
 struct Score {
     a: f32,
@@ -175,11 +175,26 @@ fn load_all_reads() -> Vec<SelexRead> {
     observed_reads
 }
 
-fn load_initial_score_matrix(motif_len: i32) -> Vec<Score> {
+/*
+fn load_uniform_score_matrix(motif_len: i32) -> Vec<Score> {
     let mut score_matrix = Vec::with_capacity(motif_len as usize);
     for _ in 0..motif_len {
-        score_matrix.push(Score{a: -10.0, c: -1.0, g: -1.0, t: -10.0})
+        score_matrix.push(Score{a: -1.0, c: -1.0, g: -1.0, t: -1.0})
     }
+    score_matrix
+}
+*/
+
+fn load_initial_score_matrix() -> Vec<Score> {
+    let motif_len = 6;
+    let mut score_matrix = Vec::with_capacity(motif_len as usize);
+    score_matrix.push(Score{a: -1.0, c: -1.0, g: -1.0, t: -10.0});
+    score_matrix.push(Score{a: -10.0, c: -1.0, g: -1.0, t: -1.0});
+    score_matrix.push(Score{a: -10.0, c: -1.0, g: -1.0, t: -1.0});
+    score_matrix.push(Score{a: -1.0, c: -1.0, g: -1.0, t: -1.00});
+    score_matrix.push(Score{a: -1.0, c: -5.0, g: -1.0, t: -1.0});
+    score_matrix.push(Score{a: -1.0, c: -5.0, g: -1.0, t: -1.0});
+
     score_matrix
 }
 
@@ -242,11 +257,18 @@ fn calc_lhd(
 
     lhd_num - norm_constant
 }
+
+/*
+TODO:
+0) get better dg mnatrix
+1) implement simulator
+2) use reverse complement
+
+*/
  
 fn main() {
-    let motif_len = 10;
-    let score_matrix = load_initial_score_matrix(motif_len);
-
+    let score_matrix = load_initial_score_matrix();
+        
     let observed_reads = load_all_reads();
 
     let unbnd_concentrations = vec![1.0; env::args().len()];
